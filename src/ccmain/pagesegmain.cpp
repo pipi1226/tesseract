@@ -167,7 +167,7 @@ int Tesseract::SegmentPage(const STRING* input_file, BLOCK_LIST* blocks,
   bool splitting =
       pageseg_devanagari_split_strategy != ShiroRekhaSplitter::NO_SPLIT;
   bool cjk_mode = textord_use_cjk_fp_model;
-
+  tprintf("%s(cjk_mode = %d) @%d...\r\n", __FUNCTION__, cjk_mode, __LINE__);
   textord_.TextordPage(pageseg_mode, reskew_, width, height, pix_binary_,
                        pix_thresholds_, pix_grey_, splitting || cjk_mode,
                        &diacritic_blobs, blocks, &to_blocks);
@@ -208,9 +208,11 @@ int Tesseract::AutoPageSeg(PageSegMode pageseg_mode, BLOCK_LIST* blocks,
   BLOCK_LIST found_blocks;
   TO_BLOCK_LIST temp_blocks;
 
+  tprintf("%s(blocks size = %d) @%d...\r\n", __FUNCTION__, blocks->length(), __LINE__);
   ColumnFinder* finder = SetupPageSegAndDetectOrientation(
       pageseg_mode, blocks, osd_tess, osr, &temp_blocks, &photomask_pix,
       &musicmask_pix);
+  tprintf("%s(blocks size = %d) @%d...\r\n", __FUNCTION__, blocks->length(), __LINE__);
   int result = 0;
   if (finder != nullptr) {
     TO_BLOCK_IT to_block_it(&temp_blocks);
@@ -255,6 +257,12 @@ static void AddAllScriptsConverted(const UNICHARSET& sid_set,
   }
 }
 
+bool WriteMidBinaryImage(char *strName, Pix *pics, int nFormat)
+{
+  pixWrite(strName, pics, nFormat);
+  return TRUE;
+}
+
 /**
  * Sets up auto page segmentation, determines the orientation, and corrects it.
  * Somewhat arbitrary chunk of functionality, factored out of AutoPageSeg to
@@ -268,7 +276,7 @@ static void AddAllScriptsConverted(const UNICHARSET& sid_set,
  * See AutoPageSeg for other arguments.
  * The returned ColumnFinder must be deleted after use.
  */
-ColumnFinder* Tesseract::SetupPageSegAndDetectOrientation(
+ColumnFinder* Tesseract:: SetupPageSegAndDetectOrientation(
     PageSegMode pageseg_mode, BLOCK_LIST* blocks, Tesseract* osd_tess,
     OSResults* osr, TO_BLOCK_LIST* to_blocks, Pix** photo_mask_pix,
     Pix** music_mask_pix) {
@@ -279,9 +287,14 @@ ColumnFinder* Tesseract::SetupPageSegAndDetectOrientation(
   ICOORD bleft(0, 0);
 
   ASSERT_HOST(pix_binary_ != nullptr);
+  tprintf("%s(blocks size = %d) @%d...\r\n", __FUNCTION__, blocks->length(), __LINE__);
+
   if (tessedit_dump_pageseg_images) {
     pixa_debug_.AddPix(pix_binary_, "PageSegInput");
   }
+  
+  WriteMidBinaryImage("SetupPageSeg1.jpg", pix_binary_, 2); // write binary image
+  
   // Leptonica is used to find the rule/separator lines in the input.
   LineFinder::FindAndRemoveLines(source_resolution_,
                                  textord_tabfind_show_vlines, pix_binary_,

@@ -848,6 +848,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     return -1;
   delete page_res_;
   if (block_list_->empty()) {
+    tprintf("%s(%d) block_list is empty...\r\n", __func__, __LINE__);
     page_res_ = new PAGE_RES(false, block_list_,
                              &tesseract_->prev_word_best_choice_);
     return 0; // Empty page.
@@ -857,12 +858,15 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   recognition_done_ = true;
 #ifndef DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_resegment_from_line_boxes) {
+    tprintf("%s(%d) ...\r\n", __func__, __LINE__);
     page_res_ = tesseract_->ApplyBoxes(*input_file_, true, block_list_);
   } else if (tesseract_->tessedit_resegment_from_boxes) {
+    tprintf("%s(%d) ...\r\n", __func__, __LINE__);
     page_res_ = tesseract_->ApplyBoxes(*input_file_, false, block_list_);
   } else
 #endif  // ndef DISABLED_LEGACY_ENGINE
   {
+    tprintf("%s(%d) create page_res...\r\n", __func__, __LINE__);
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(),
                              block_list_, &tesseract_->prev_word_best_choice_);
   }
@@ -872,12 +876,14 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   }
 
   if (tesseract_->tessedit_train_line_recognizer) {
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
     tesseract_->TrainLineRecognizer(*input_file_, *output_file_, block_list_);
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
 #ifndef DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_make_boxes_from_boxes) {
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
@@ -889,6 +895,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
             page_res_, tesseract_, thresholder_->GetScaleFactor(),
             thresholder_->GetScaledYResolution(),
             rect_left_, rect_top_, rect_width_, rect_height_);
+    tprintf("%s(%d)\r\n", __func__, __LINE__);
     truth_cb_->Run(tesseract_->getDict().getUnicharset(),
                    image_height_, page_it, this->tesseract()->pix_grey());
     delete page_it;
@@ -908,9 +915,11 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   } else if (tesseract_->tessedit_train_from_boxes) {
     STRING fontname;
     ExtractFontName(*output_file_, &fontname);
+      tprintf("%s(%d)\r\n", __func__, __LINE__);
     tesseract_->ApplyBoxTraining(fontname, page_res_);
   } else if (tesseract_->tessedit_ambigs_training) {
     FILE *training_output_file = tesseract_->init_recog_training(*input_file_);
+      tprintf("%s(%d)\r\n", __func__, __LINE__);
     // OCR the page segmented into words by tesseract.
     tesseract_->recog_training_segmented(
         *input_file_, page_res_, monitor, training_output_file);
@@ -920,7 +929,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     // Now run the main recognition.
     bool wait_for_text = true;
     GetBoolVariable("paragraph_text_based", &wait_for_text);
+    tprintf("%s(wait_for_text = %d)\r\n", __func__, wait_for_text, __LINE__);
     if (!wait_for_text) DetectParagraphs(false);
+    if(monitor == nullptr)
+    {
+        tprintf("%s(%d) monitor == nullptr\r\n", __func__, __LINE__);
+    }
     if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
       if (wait_for_text) DetectParagraphs(true);
     } else {
@@ -1095,7 +1109,25 @@ bool TessBaseAPI::ProcessPages(const char* filename, const char* retry_config,
     }
   }
   #endif  // ndef DISABLED_LEGACY_ENGINE
+      tprintf("%s(%d) Write of TR file succeed: %s\n", __FUNCTION__, __LINE__, output_file_->string());
   return result;
+}
+
+// [20181028] yyq: get image info
+void TessBaseAPIOutputImage(Pix *pix)
+{
+    if(pix == nullptr)
+    {
+        tprintf("%s(%d) pix is null...\r\n", __func__, __LINE__);
+    }
+    tprintf("%s(%d) get pix info...\r\n", __func__, __LINE__);
+    tprintf("w = %d, h = %d...\r\n", pix->w, pix->h);
+    tprintf("d = %d, spp = %d...\r\n", pix->d, pix->spp);
+    tprintf("wpl = %d, refcount = %d...\r\n", pix->wpl, pix->refcount);
+    tprintf("xres = %d, yres = %d...\r\n", pix->xres, pix->yres);
+    tprintf("informat = %d, special = %d...\r\n", pix->informat, pix->special);
+    tprintf("text = %s...\r\n", pix->text);
+
 }
 
 // In the ideal scenario, Tesseract will start working on data as soon
@@ -1184,7 +1216,8 @@ bool TessBaseAPI::ProcessPagesInternal(const char* filename,
       return false;
     }
   }
-
+  tprintf("%s(%d) readPix...\r\n", __func__, __LINE__);
+  TessBaseAPIOutputImage(pix);
   // Begin the output
   if (renderer && !renderer->BeginDocument(unknown_title_)) {
     pixDestroy(&pix);
@@ -1215,6 +1248,7 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
                               TessResultRenderer* renderer) {
   PERF_COUNT_START("ProcessPage")
   SetInputName(filename);
+  tprintf("%s(%d) input = %s...\r\n", __func__, __LINE__, filename);
   SetImage(pix);
   bool failed = false;
 
@@ -1238,12 +1272,17 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
 
     // Now run the main recognition.
     failed = Recognize(&monitor) < 0;
+    tprintf("%s(%d) retry_config: %s\n", __func__, __LINE__, retry_config);
   } else {
-    // Normal layout and character recognition with no timeout.
-    failed = Recognize(nullptr) < 0;
+
+      tprintf("%s(%d) retry_config: %s\n", __func__, __LINE__, retry_config);
+      // Normal layout and character recognition with no timeout.
+      failed = Recognize(nullptr) < 0;
+
   }
 
   if (tesseract_->tessedit_write_images) {
+      tprintf("%s(%d) ...\r\n", __func__, __LINE__);
 #ifndef ANDROID_BUILD
     Pix* page_pix = GetThresholdedImage();
     pixWrite("tessinput.tif", page_pix, IFF_TIFF_G4);
@@ -1260,9 +1299,11 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
       fclose(fp);
     }
     // Switch to alternate mode for retry.
+    tprintf("%s(%d) retry_config = %s...\r\n", __func__, __LINE__, retry_config);
     ReadConfigFile(retry_config);
     SetImage(pix);
     Recognize(nullptr);
+    tprintf("%s(%d) retry_config = %s...\r\n", __func__, __LINE__, retry_config);
     // Restore saved config variables.
     ReadConfigFile(kOldVarsFile);
   }
@@ -2406,6 +2447,9 @@ int TessBaseAPI::FindLines() {
       !Threshold(tesseract_->mutable_pix_binary())) {
     return -1;
   }
+
+  // [20191201] need to write the pix_binary_
+
 
   tesseract_->PrepareForPageseg();
 

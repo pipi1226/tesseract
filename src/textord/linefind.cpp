@@ -257,6 +257,7 @@ void LineFinder::FindAndRemoveLines(int resolution, bool debug, Pix* pix,
   GetLineMasks(resolution, pix, &pix_vline, &pix_non_vline, &pix_hline,
                &pix_non_hline, &pix_intersections, pix_music_mask,
                pixa_display);
+  
   // Find lines, convert to TabVector_LIST and remove those that are used.
   FindAndRemoveVLines(resolution, pix_intersections, vertical_x, vertical_y,
                       &pix_vline, pix_non_vline, pix, v_lines);

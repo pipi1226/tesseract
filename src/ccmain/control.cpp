@@ -163,16 +163,23 @@ void Tesseract::SetupAllWordsPassN(int pass_n,
                                    GenericVector<WordData>* words) {
   // Prepare all the words.
   PAGE_RES_IT page_res_it(page_res);
+  tprintf("%s(%d) page_res size = %d...\r\n", __func__, __LINE__,
+          page_res->char_count);
+  // [20191201] in log file, the PAGE_RES has 5 lines, how blocks
+  // segment image into 5 lines????
   for (page_res_it.restart_page(); page_res_it.word() != nullptr;
        page_res_it.forward()) {
     if (target_word_box == nullptr ||
         ProcessTargetWord(page_res_it.word()->word->bounding_box(),
                           *target_word_box, word_config, 1)) {
+
+      tprintf("%s(%d) push_back...\r\n", __func__, __LINE__);
       words->push_back(WordData(page_res_it));
     }
   }
   // Setup all the words for recognition with polygonal approximation.
   for (int w = 0; w < words->size(); ++w) {
+    tprintf("%s(%d) SetupWordPassN second...\r\n", __func__, __LINE__);
     SetupWordPassN(pass_n, &(*words)[w]);
     if (w > 0) (*words)[w].prev_word = &(*words)[w - 1];
   }
@@ -182,6 +189,7 @@ void Tesseract::SetupAllWordsPassN(int pass_n,
 void Tesseract::SetupWordPassN(int pass_n, WordData* word) {
   if (pass_n == 1 || !word->word->done) {
     if (pass_n == 1) {
+      tprintf("%s(%d) setupforrecognition...\r\n", __func__, __LINE__);
       word->word->SetupForRecognition(unicharset, this, BestPix(),
                                       tessedit_ocr_engine_mode, nullptr,
                                       classify_bln_numeric_mode,
@@ -223,6 +231,7 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC* monitor,
   // (eg set_pass1 and set_pass2) and an intermediate adaption pass needs to be
   // added. The results will be significantly different with adaption on, and
   // deterioration will need investigation.
+  tprintf("%s(%d)...\r\n", __func__, __LINE__);
   pr_it->restart_page();
   for (int w = 0; w < words->size(); ++w) {
     WordData* word = &(*words)[w];
@@ -231,14 +240,17 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC* monitor,
       monitor->ocr_alive = TRUE;
       if (pass_n == 1) {
         monitor->progress = 70 * w / words->size();
+		tprintf("%s(%d)...\r\n", __func__, __LINE__);
         if (monitor->progress_callback2 != nullptr) {
           TBOX box = pr_it->word()->word->bounding_box();
+			tprintf("%s(%d)...\r\n", __func__, __LINE__);
           (*monitor->progress_callback2)(monitor, box.left(),
                                         box.right(), box.top(), box.bottom());
         }
       } else {
         monitor->progress = 70 + 30 * w / words->size();
         if (monitor->progress_callback2 != nullptr) {
+			tprintf("%s(%d)...\r\n", __func__, __LINE__);
           (*monitor->progress_callback2)(monitor, 0, 0, 0, 0);
         }
       }
@@ -269,13 +281,18 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC* monitor,
       // Needs to be setup again to see the new outlines in the chopped_word.
       SetupWordPassN(pass_n, word);
     }
-
+	tprintf("%s(%d)\n", __func__, __LINE__);
     classify_word_and_language(pass_n, pr_it, word);
     if (tessedit_dump_choices || debug_noise_removal) {
-      tprintf("Pass%d: %s [%s]\n", pass_n,
+      tprintf("[20181022] Pass%d: %s [%s]\n", pass_n,
               word->word->best_choice->unichar_string().string(),
               word->word->best_choice->debug_string().string());
     }
+    tprintf("%s(%d) BOOL = %d...\r\n", __func__, __LINE__, 1);
+      tprintf("[20181022] Pass%d: %s [%s]\n", pass_n,
+              word->word->best_choice->unichar_string().string(),
+              word->word->best_choice->debug_string().string());
+    tprintf("%s(%d)\n", __func__, __LINE__);
     pr_it->forward();
     if (make_next_word_fuzzy && pr_it->word() != nullptr) {
       pr_it->MakeCurrentWordFuzzy();
@@ -317,6 +334,7 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     tessedit_minimal_rejection.set_value (TRUE);
   }
 
+  tprintf("%s(%d)...\r\n", __func__, __LINE__);
   if (dopasses==0 || dopasses==1) {
     page_res_it.restart_page();
     // ****************** Pass 1 *******************
@@ -345,7 +363,13 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     // Set up all words ready for recognition, so that if parallelism is on
     // all the input and output classes are ready to run the classifier.
     GenericVector<WordData> words;
+    tprintf("%s(%d)...\r\n", __func__, __LINE__);
+    tprintf("%s(%d) words size = %d...\r\n", __func__, __LINE__, words.size());
+    // tprintf("%s(%d) box size = %d...\r\n", __func__, __LINE__, target_word_box.size());
+    // [20181125] how to get target_word_box?
+    // target_word_box and word_config are null
     SetupAllWordsPassN(1, target_word_box, word_config, page_res, &words);
+    tprintf("%s(%d) words size = %d...\r\n", __func__, __LINE__, words.size());
     #ifndef DISABLED_LEGACY_ENGINE
     if (tessedit_parallelize) {
       PrerecAllWordsPar(words);
@@ -1409,6 +1433,7 @@ void Tesseract::classify_word_and_language(int pass_n, PAGE_RES_IT* pr_it,
             word->best_choice->unichar_string().string(),
             static_cast<double>(ocr_t-start_t)/CLOCKS_PER_SEC);
   }
+  tprintf("%s (%d)\n", __func__, __LINE__);
 }
 
 /**
@@ -1424,6 +1449,7 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
   BLOCK* block = word_data.block;
   prev_word_best_choice_ = word_data.prev_word != nullptr
       ? word_data.prev_word->word->best_choice : nullptr;
+  tprintf("%s(%d)...\r\n", __func__, __LINE__);
 #ifndef ANDROID_BUILD
 #ifdef DISABLED_LEGACY_ENGINE
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
@@ -1433,12 +1459,15 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
 #endif  // def DISABLED_LEGACY_ENGINE
     if (!(*in_word)->odd_size || tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
       LSTMRecognizeWord(*block, row, *in_word, out_words);
+
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
       if (!out_words->empty())
         return;  // Successful lstm recognition.
     }
     if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
       // No fallback allowed, so use a fake.
       (*in_word)->SetupFake(lstm_recognizer_->GetUnicharset());
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
       return;
     }
 
@@ -1449,6 +1478,7 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
                                     classify_bln_numeric_mode,
                                     textord_use_cjk_fp_model,
                                     poly_allow_detailed_fx, row, block);
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
 #endif  // ndef DISABLED_LEGACY_ENGINE
   }
 #endif  // ndef ANDROID_BUILD
@@ -1463,6 +1493,7 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
     if (adapt_ok) {
       // Send word to adaptive classifier for training.
       word->BestChoiceToCorrectText();
+      tprintf("%s(%d)...\r\n", __func__, __LINE__);
       LearnWord(nullptr, word);
       // Mark misadaptions if running blamer.
       if (word->blamer_bundle != nullptr) {
@@ -1591,6 +1622,7 @@ bool Tesseract::TestNewNormalization(int original_misfits,
 void Tesseract::classify_word_pass2(const WordData& word_data,
                                     WERD_RES** in_word,
                                     PointerVector<WERD_RES>* out_words) {
+    tprintf("%s(%d)...\r\n", __func__, __LINE__);
   // Return if we do not want to run Tesseract.
   if (tessedit_ocr_engine_mode == OEM_LSTM_ONLY) {
     return;

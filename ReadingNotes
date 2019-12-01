@@ -1,0 +1,178 @@
+Tesseract frame analysis
+
+20180126
+some inferences:
+http://tesseract-ocr.repairfaq.org/
+http://tesseract-ocr.repairfaq.org/tesseract-3.01/doc/html/
+https://www.jianshu.com/p/5731116f54b8
+https://www.jianshu.com/u/05e6cc830cb0
+--------------------------
+TessBaseAPI::Recognize|tessedit_resegment_from_line_boxes -> ApplyBoxestessedit_resegment_from_boxes -> ApplyBoxestessedit_train_line_recognizer -> TrainLineRecognizer,CorrectClassifyWordstessedit_make_boxes_from_boxes -> CorrectClassifyWordstruth_cb_ -> PageIterator,if->interactive_display_mode -> pgeditor_mainelif->tessedit_train_from_boxes -> training process? Tesseract::ApplyBoxTraining,->Classify::LearnWord(adaptmatch.cpp)elif->tessedit_ambigs_training -> init_recog_training, recog_training_segmented,else->recog_all_words(page_res,...)DetectParagraphs,TessBaseAPI Class definition: class member:-TruthCallback truth_cb-block_list: block_res list-page_res
+--------------------------
+Tesseract::ApplyBoxesApplyBoxes|ReadAllBoxes|push_back: boxes, texts, full_texts|SetupApplyBoxes|clear_any_old_text|for boxes.size: ResegmentCharBox, not find->ReportFailedBox|SetupApplyBoxes|ReSegmentByClassification|TidyUp
+
+werd_res and page_res??page_res -> row -> row.data-> werd_itwer_it.data->werd<->werd_res
+
+Structures about data management:DocumentDataImageTBOX
+--------------------------
+Tesseract::CorrectClassifyWords
+structure analysis:
+PAGE_RES (see pageres.cpp)
+{
+	PAGE_RES_IT, -> WERD_RES -> WERD_CHOICE	
+}
+
+CorrectClassifyWords
+--------------------------
+Tesseract::TrainLineRecognizer
+TrainLineRecognizer
+|
+LoadDocument
+|
+ReadAllBoxes
+|
+TrainFromBoxes -> GetLineData -> GetRectImage, AddBoxesnote: 1)TBOX, BLOCK, operationBLOCK:2)data structure:DocumentData-> AddPageToDocument()ImageData -> Image*
+|
+images.Shuffle();
+|
+images.SaveDocument
+--------------------------
+Tesseract::GetRectImage
+structure analysis:
+Box
+
+Pix
+
+TBOX: character bounding box, coordinates
+--------------------------
+Tesseract class:member functions:pgeditor_mainmember vars:...
+--------------------------
+ExtractFontName: blobclass.cpp
+--------------------------
+recog_all_words, opt flowcheck langs kinds|use different classifier|(wordData structure: )
+--------------------------
+--------------------------
+PageIterator: see pageiterator.h
+usage
+page structures definitions:
+
+
+
+--------------------------
+
+--------------------------
+
+--------------------------
+
+--------------------------
+
+
+20180125
+
+http://blog.csdn.net/kaelsass/article/details/46874627
+
+structure analysis:
+Page analysis result: `PAGE_RES` (ccstruct/pageres.h).
+Page analysis result contains a list of block analysis result field: `BLOCK_RES_LIST`.
+Block analysis result: `BLOCK_RES` (ccstruct/pageres.h).
+Block analysis result contains a list of row analysis result field: `ROW_RES_LIST`.
+Row analysis result: `ROW_RES` (ccstruct/pageres.h).
+Row analysis result contains a list of word analysis result field: `WERD_RES_LIST`.
+`WERD_RES`(ccstruct/pageres.h) is a collection of publicly accessible members that gathers information about a word result.
+--------------------------
+Tesseract class:
+
+EquationDetect
+
+ImageThresholder: ThresholdToPix
+
+BLOCK_LIST
+
+PAGE_RES
+--------------------------
+----------------------------------------------------
+1. 主程序的入口
+tesseractmain.cpp
+识别流程：分割pages流程
+prepared params
+|
+TessBaseAPI::ProcessPages
+|
+TessBaseAPI::ProcessPagesInternal
+|
+TessBaseAPI::ProcessPagesFileList, -> while ProcessPage
+ProcessPagesMultipageTiff,
+(analysis file format...then process page)
+|
+ProcessPage, important,
+|
+Recognize, see 2. Recognize
+-----------------------
+2. Recognize
+Recognize 
+|
+(prepare params)			
+FindLines,		
+(see 3.findlines)
+|
+TrainLineRecognizer
+(see 4. TrainLineRecognizer)
+|
+CorrectClassifyWords
+(see 5. CorrectClassifyWords)
+|
+
+|
+pgeditor_main
+|
+DetectParagraphs
+|
+
+
+-----------------------
+3. findlines
+(prepare params)
+FindLines,		
+|
+InitAdaptiveClassifier
+PrepareForPageseg,		
+EquationDetect, (if)
+PrepareForTessOCR
+SegmentPage
+切分完成
+|
+end
+-----------------------
+
+识别？
+----------------------------------------------------
+
+
+训练流程？
+
+在提取试题字符的时候，提取块区域时，可以参考链接中的Finding the regions部分
+找tab-stops及之后处理步骤的算法还不甚清楚，需要继续了解
+识别字符部分还没开始看，这部分应该有涉及机器学习的多种算法，有时间需要继续学习
+
+http://blog.csdn.net/guzhenping/article/details/51019010
+
+分析连通区域
+找到块区域
+找文本行和单词
+得出(识别)文本
+
+lstm如何应用??
+
+
+
+Lstmrecognizer.cpp
+|
+Network::CreateFromFile
+|
+Network.cpp: new LSTM
+|
+NetworkBuilder.cpp
+|
+lstm
+
+

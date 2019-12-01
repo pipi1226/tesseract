@@ -177,17 +177,39 @@ void LSTMRecognizer::RecognizeLine(const ImageData& image_data, bool invert,
   NetworkIO outputs;
   float scale_factor;
   NetworkIO inputs;
+  int i = 0;
   if (!RecognizeLine(image_data, invert, debug, false, false, &scale_factor,
                      &inputs, &outputs))
     return;
+  tprintf("%s(%d) wordsize = %d...\r\n", __func__, __LINE__, words->size());
+
+      for(i = 0; i < words->size(); i++)
+      {
+        tprintf("%s(%d) i = %d...\n", __func__, __LINE__, i);
+        WERD_RES* tsWerd = words->get(i);
+        tprintf("%s(%d) i = %d, out = %s...\n", __func__, __LINE__, i, tsWerd->best_choice->unichar_string().string());
+      }
+
   if (search_ == nullptr) {
     search_ =
         new RecodeBeamSearch(recoder_, null_char_, SimpleTextOutput(), dict_);
   }
   search_->Decode(outputs, kDictRatio, kCertOffset, worst_dict_cert,
                   &GetUnicharset(), lstm_choice_mode);
+	tprintf("%s(%d)\n", __func__, __LINE__);
   search_->ExtractBestPathAsWords(line_box, scale_factor, debug,
                                   &GetUnicharset(), words, lstm_choice_mode);
+	tprintf("%s(%d)\n", __func__, __LINE__);
+
+  // words cycle [20181030]
+  // in the cycle below: the sentences has been separated into words.
+  for(i = 0; i < words->size(); i++)
+  {
+      tprintf("%s(%d) i = %d...\n", __func__, __LINE__, i);
+      WERD_RES* tsWerd = words->get(i);
+      tprintf("%s(%d) i = %d, out = %s...\n", __func__, __LINE__, i, tsWerd->best_choice->unichar_string().string());
+  }
+  tprintf("%s(%d)\n", __func__, __LINE__);
 }
 
 // Helper computes min and mean best results in the output.

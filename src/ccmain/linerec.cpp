@@ -221,7 +221,12 @@ ImageData* Tesseract::GetRectImage(const TBOX& box, const BLOCK& block,
 // Analogous to classify_word_pass1, but can handle a group of words as well.
 void Tesseract::LSTMRecognizeWord(const BLOCK& block, ROW *row, WERD_RES *word,
                                   PointerVector<WERD_RES>* words) {
-  TBOX word_box = word->word->bounding_box();
+  TBOX word_box = word->word->bounding_box(); // how to get?
+  tprintf("%s(%d)\n", __func__, __LINE__);
+  tprintf("%s(%d) top =%d\n", __func__, __LINE__, word_box.top());
+  tprintf("%s(%d) bottom =%d\n", __func__, __LINE__, word_box.bottom());
+  tprintf("%s(%d) left =%d\n", __func__, __LINE__, word_box.left());
+  tprintf("%s(%d) right =%d\n", __func__, __LINE__, word_box.right());
   // Get the word image - no frills.
   if (tessedit_pageseg_mode == PSM_SINGLE_WORD ||
       tessedit_pageseg_mode == PSM_RAW_LINE) {
@@ -229,6 +234,7 @@ void Tesseract::LSTMRecognizeWord(const BLOCK& block, ROW *row, WERD_RES *word,
     // interpretation.
     word_box = TBOX(0, 0, ImageWidth(), ImageHeight());
   } else {
+    tprintf("%s(%d)\n", __func__, __LINE__);
     float baseline = row->base_line((word_box.left() + word_box.right()) / 2);
     if (baseline + row->descenders() < word_box.bottom())
       word_box.set_bottom(baseline + row->descenders());
@@ -240,6 +246,7 @@ void Tesseract::LSTMRecognizeWord(const BLOCK& block, ROW *row, WERD_RES *word,
   lstm_recognizer_->RecognizeLine(*im_data, true, classify_debug_level > 0,
                                   kWorstDictCertainty / kCertaintyScale,
                                   word_box, words, lstm_choice_mode);
+	tprintf("%s(%d)...\r\n", __func__, __LINE__);
   delete im_data;
   SearchWords(words);
 }
@@ -267,7 +274,7 @@ void Tesseract::SearchWords(PointerVector<WERD_RES>* words) {
     WERD_RES* word = (*words)[w];
     if (word->best_choice == nullptr) {
       // It is a dud.
-      word->SetupFake(lstm_recognizer_->GetUnicharset());
+      word->SetupFake(lstm_recognizer_->GetUnicharset()); // this interface usage?
     } else {
       // Set the best state.
       for (int i = 0; i < word->best_choice->length(); ++i) {
