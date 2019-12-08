@@ -867,7 +867,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
 
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
-#ifndef DISABLED_LEGACY_ENGINE
+#ifndef DISABLED_LEGACY_ENGINE  // [20191208] what's this macro used for?
   if (tesseract_->tessedit_resegment_from_line_boxes) {
     tprintf("%s(%d) ...\r\n", __func__, __LINE__);
     page_res_ = tesseract_->ApplyBoxes(*input_file_, true, block_list_);
@@ -878,6 +878,7 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
 #endif  // ndef DISABLED_LEGACY_ENGINE
   {
     tprintf("%s(%d) create page_res...\r\n", __func__, __LINE__);
+    // [20191208] page_res_ is inited by block_list_, how to segment block_list_?
     page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(),
                              block_list_, &tesseract_->prev_word_best_choice_);
   }
@@ -911,6 +912,12 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
                    image_height_, page_it, this->tesseract()->pix_grey());
     delete page_it;
   }
+  else
+  {
+    /* code */
+    tprintf("%s(truth_cb_ is null) @%d\r\n", __func__, __LINE__);
+  }
+  
 
   int result = 0;
   if (tesseract_->interactive_display_mode) {
@@ -946,9 +953,17 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     {
         tprintf("%s(%d) monitor == nullptr\r\n", __func__, __LINE__);
     }
-    if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) {
-      if (wait_for_text) DetectParagraphs(true);
-    } else {
+
+    // [20191208] page_res_ is page-level data, block_list is page data, including PAGE_RES
+    if (tesseract_->recog_all_words(page_res_, monitor, nullptr, nullptr, 0)) 
+    {
+      if (wait_for_text) 
+      {
+        DetectParagraphs(true);
+      }
+    } 
+    else 
+    {
       result = -1;
     }
   }

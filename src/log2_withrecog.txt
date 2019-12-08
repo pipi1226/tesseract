@@ -1,4 +1,6 @@
-➜  tesseract git:(master) ✗ tesseract test1.png test1 -l chi_sim
+tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
+
+tesseract git:(master) ✗ tesseract test1.png test1 -l chi_sim
 main(pagesegmode=3) @636...
 Tesseract Open Source OCR Engine v4.0.0-16-g37b6 with Leptonica
 ProcessPagesInternal(1230) readPix...

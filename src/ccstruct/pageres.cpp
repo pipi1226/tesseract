@@ -80,9 +80,12 @@ PAGE_RES::PAGE_RES(
     WERD_CHOICE **prev_word_best_choice_ptr) {
   Init();
   BLOCK_IT block_it(the_block_list);
-  BLOCK_RES_IT block_res_it(&block_res_list);
+  BLOCK_RES_IT block_res_it(&block_res_list); // the link structure between PAGE_RES and BLOCK_LIST
   for (block_it.mark_cycle_pt();
-       !block_it.cycled_list(); block_it.forward()) {
+       !block_it.cycled_list(); block_it.forward()) 
+  {
+    // Segment block into row, BLOCK_RES, ROW_RES
+    tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
     block_res_it.add_to_end(new BLOCK_RES(merge_similar_words,
                                           block_it.data()));
   }
@@ -96,7 +99,7 @@ PAGE_RES::PAGE_RES(
  *************************************************************************/
 
 BLOCK_RES::BLOCK_RES(bool merge_similar_words, BLOCK *the_block) {
-  ROW_IT row_it (the_block->row_list ());
+  ROW_IT row_it (the_block->row_list ()); // block include row infos
   ROW_RES_IT row_res_it(&row_res_list);
 
   char_count = 0;
@@ -111,6 +114,7 @@ BLOCK_RES::BLOCK_RES(bool merge_similar_words, BLOCK *the_block) {
   block = the_block;
 
   for (row_it.mark_cycle_pt(); !row_it.cycled_list(); row_it.forward()) {
+    // segment it into Rows
     row_res_it.add_to_end(new ROW_RES(merge_similar_words, row_it.data()));
   }
 }
@@ -122,10 +126,10 @@ BLOCK_RES::BLOCK_RES(bool merge_similar_words, BLOCK *the_block) {
  *************************************************************************/
 
 ROW_RES::ROW_RES(bool merge_similar_words, ROW *the_row) {
-  WERD_IT word_it(the_row->word_list());
+  WERD_IT word_it(the_row->word_list());  // segment row into words
   WERD_RES_IT word_res_it(&word_res_list);
   WERD_RES *combo = nullptr;        // current combination of fuzzies
-  WERD *copy_word;
+  WERD *copy_word;    // single word structure
 
   char_count = 0;
   rej_count = 0;
