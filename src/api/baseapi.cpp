@@ -824,9 +824,14 @@ int TessBaseAPI::GetThresholdedImageScaleFactor() const {
 PageIterator* TessBaseAPI::AnalyseLayout() { return AnalyseLayout(false); }
 
 PageIterator* TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
+  tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
   if (FindLines() == 0) {
+    tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
     if (block_list_->empty())
+    {
+      tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
       return nullptr;  // The page was empty.
+    }
     page_res_ = new PAGE_RES(merge_similar_words, block_list_, nullptr);
     DetectParagraphs(false);
     return new PageIterator(
@@ -843,9 +848,15 @@ PageIterator* TessBaseAPI::AnalyseLayout(bool merge_similar_words) {
  */
 int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   if (tesseract_ == nullptr)
+  {
     return -1;
+  }
+  // [20191208] check find lines again.
   if (FindLines() != 0)
+  {
     return -1;
+  }
+  // [20191208] delete page_res_, before recognize.
   delete page_res_;
   if (block_list_->empty()) {
     tprintf("%s(%d) block_list is empty...\r\n", __func__, __LINE__);
@@ -876,14 +887,14 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   }
 
   if (tesseract_->tessedit_train_line_recognizer) {
-      tprintf("%s(%d)...\r\n", __func__, __LINE__);
+    tprintf("%s(%d)...\r\n", __func__, __LINE__);
     tesseract_->TrainLineRecognizer(*input_file_, *output_file_, block_list_);
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
 #ifndef DISABLED_LEGACY_ENGINE
   if (tesseract_->tessedit_make_boxes_from_boxes) {
-      tprintf("%s(%d)...\r\n", __func__, __LINE__);
+    tprintf("%s(%d)...\r\n", __func__, __LINE__);
     tesseract_->CorrectClassifyWords(page_res_);
     return 0;
   }
@@ -2435,6 +2446,7 @@ int TessBaseAPI::FindLines() {
   if (recognition_done_)
     ClearResults();
   if (!block_list_->empty()) {
+    tprintf("%s(called previous, block_list is not empty) @%d...\r\n", __FUNCTION__, __LINE__);
     return 0;
   }
   if (tesseract_ == nullptr) {
@@ -2449,7 +2461,7 @@ int TessBaseAPI::FindLines() {
   }
 
   // [20191201] need to write the pix_binary_
-
+  tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
 
   tesseract_->PrepareForPageseg();
 
@@ -2497,11 +2509,15 @@ int TessBaseAPI::FindLines() {
   }
 
   if (tesseract_->SegmentPage(input_file_, block_list_, osd_tess, &osr) < 0)
+  {
+    tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
     return -1;
+  }
 
   // If Devanagari is being recognized, we use different images for page seg
   // and for OCR.
   tesseract_->PrepareForTessOCR(block_list_, osd_tess, &osr);
+  tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
   return 0;
 }
 
@@ -2653,6 +2669,7 @@ void TessBaseAPI::DetectParagraphs(bool after_text_recognition) {
                                   result_it, &models);
     *paragraph_models_ += models;
   } while (result_it->Next(RIL_BLOCK));
+  tprintf("%s() @%d...\r\n", __FUNCTION__, __LINE__);
   delete result_it;
 }
 

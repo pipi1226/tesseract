@@ -630,6 +630,12 @@ int main(int argc, char** argv) {
     pixDestroy(&pixs);
     return ret_val;
   }
+  else
+  {
+    /* code */
+    tprintf("%s(pagesegmode=%d) @%d...\r\n", __FUNCTION__, pagesegmode, __LINE__);
+  }
+  
 
   // set in_training_mode to true when using one of these configs:
   // ambigs.train, box.train, box.train.stderr, linebox, rebox
